@@ -19,6 +19,7 @@
             --gray: #6c757d;
             --border: #dee2e6;
             --background: #f5f7f9;
+            --overbooking: #ff8c00;
         }
         
         * {
@@ -124,6 +125,14 @@
             background-color: #e68a00;
         }
         
+        .btn-overbooking {
+            background-color: var(--overbooking);
+        }
+        
+        .btn-overbooking:hover {
+            background-color: #e67c00;
+        }
+        
         .flex-row {
             display: flex;
             gap: 15px;
@@ -158,6 +167,13 @@
         
         tr:hover {
             background-color: #e9ecef;
+            cursor: pointer;
+        }
+        
+        .date-header {
+            background-color: var(--primary-dark) !important;
+            color: white;
+            font-weight: bold;
         }
         
         .paid {
@@ -344,6 +360,109 @@
             font-size: 0.9rem;
         }
         
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--gray);
+        }
+        
+        .close-modal:hover {
+            color: var(--dark);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            text-align: right;
+        }
+        
+        .appointment-detail {
+            margin-bottom: 10px;
+            display: flex;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+        
+        /* Estilos para disponibilidad de horas */
+        .time-option {
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+        
+        .time-available {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .time-unavailable {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        
+        .time-disabled {
+            background-color: #f5f5f5;
+            color: #9e9e9e;
+        }
+        
+        .time-overbooking {
+            background-color: #fff3e0;
+            color: #ef6c00;
+        }
+        
+        /* Checkbox de sobrecupo */
+        .overbooking-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .overbooking-container input {
+            width: auto;
+            margin-right: 10px;
+        }
+        
         @media (max-width: 1200px) {
             .calendar {
                 grid-template-columns: repeat(5, 1fr);
@@ -384,6 +503,11 @@
                 flex-direction: column;
                 text-align: center;
                 gap: 10px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
             }
         }
     </style>
@@ -452,6 +576,10 @@
                             <label>Hora de fin:</label>
                             <input type="time" id="endTime" value="17:00">
                         </div>
+                        <div>
+                            <label>Duración de cita (minutos):</label>
+                            <input type="number" id="appointmentDuration" value="45" min="15" step="15">
+                        </div>
                         <div style="display: flex; align-items: flex-end;">
                             <button id="addSchedule"><i class="fas fa-plus"></i> Aplicar Horario</button>
                         </div>
@@ -462,6 +590,14 @@
                     <label>Horarios configurados:</label>
                     <div id="timeSlots" class="time-slots">
                         <!-- Los horarios se agregarán aquí -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Configuración de sobrecupo:</label>
+                    <div class="overbooking-container">
+                        <input type="checkbox" id="allowOverbooking">
+                        <label for="allowOverbooking">Permitir sobrecupo en los días de atención</label>
                     </div>
                 </div>
             </div>
@@ -493,6 +629,7 @@
                                 <option value="">Seleccione una hora</option>
                                 <!-- Las opciones de hora se llenarán con JavaScript -->
                             </select>
+                            <div id="timeOptionsInfo"></div>
                         </div>
                     </div>
                     
@@ -518,12 +655,11 @@
             <div class="card">
                 <h2><i class="fas fa-calendar-week"></i> Vista de Citas por Día</h2>
                 <div class="flex-row">
-                    <div class="form-group">
-                        <label for="weekSelector">Seleccionar semana:</label>
-                        <input type="week" id="weekSelector">
-                    </div>
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button id="prevWeek"><i class="fas fa-chevron-left"></i> Semana anterior</button>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button id="todayWeek">Semana actual</button>
                     </div>
                     <div class="form-group" style="display: flex; align-items: flex-end;">
                         <button id="nextWeek">Semana siguiente <i class="fas fa-chevron-right"></i></button>
@@ -539,8 +675,18 @@
         <div class="tab-content" id="list-tab">
             <div class="card">
                 <h2><i class="fas fa-list"></i> Todas las Citas Agendadas</h2>
-                <div class="form-group">
-                    <input type="text" id="searchInput" placeholder="Buscar por nombre, RUT o fecha...">
+                <div class="flex-row">
+                    <div class="form-group">
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre, RUT o fecha...">
+                    </div>
+                    <div class="form-group">
+                        <input type="date" id="filterDate" placeholder="Filtrar por fecha">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button id="generatePdfByDate" class="btn-secondary">
+                            <i class="fas fa-file-pdf"></i> PDF por Fecha
+                        </button>
+                    </div>
                 </div>
                 <table id="appointmentsTable">
                     <thead>
@@ -561,14 +707,38 @@
         </div>
     </div>
 
+    <!-- Modal para ver detalles de cita -->
+    <div id="appointmentModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div class="modal-header">
+                <h2>Detalles de la Cita</h2>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Los detalles de la cita se cargarán aquí -->
+            </div>
+            <div class="modal-footer">
+                <button id="closeModal" class="btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Variables globales
         let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-        let schedule = JSON.parse(localStorage.getItem('schedule')) || { days: [], timeSlots: [] };
+        let schedule = JSON.parse(localStorage.getItem('schedule')) || { 
+            days: [], 
+            timeSlots: [],
+            duration: 45,
+            allowOverbooking: false
+        };
         let currentWeek = new Date();
         
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
+            // Configurar la hora de Chile continental
+            setChileanTime();
+            
             // Cargar configuración existente
             loadScheduleConfiguration();
             
@@ -580,6 +750,9 @@
                 });
             }
             
+            // Cargar configuración de sobrecupo
+            document.getElementById('allowOverbooking').checked = schedule.allowOverbooking || false;
+            
             // Cargar citas existentes
             renderAppointments();
             updateStats();
@@ -587,12 +760,10 @@
             // Configurar fecha mínima como hoy
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date').setAttribute('min', today);
+            document.getElementById('filterDate').setAttribute('min', today);
             
             // Actualizar opciones de hora cuando cambia la fecha
             document.getElementById('date').addEventListener('change', updateTimeOptions);
-            
-            // Configurar selector de semana
-            setupWeekSelector();
             
             // Generar calendario
             generateCalendar();
@@ -602,6 +773,7 @@
             
             // Configurar búsqueda
             document.getElementById('searchInput').addEventListener('input', renderAppointments);
+            document.getElementById('filterDate').addEventListener('change', renderAppointments);
             
             // Navegación entre semanas
             document.getElementById('prevWeek').addEventListener('click', function() {
@@ -609,19 +781,59 @@
                 generateCalendar();
             });
             
+            document.getElementById('todayWeek').addEventListener('click', function() {
+                currentWeek = new Date();
+                generateCalendar();
+            });
+            
             document.getElementById('nextWeek').addEventListener('click', function() {
                 currentWeek.setDate(currentWeek.getDate() + 7);
                 generateCalendar();
             });
+            
+            // Configurar modal
+            setupModal();
+            
+            // Generar PDF por fecha
+            document.getElementById('generatePdfByDate').addEventListener('click', function() {
+                const filterDate = document.getElementById('filterDate').value;
+                generatePDF(filterDate);
+            });
+            
+            // Configurar sobrecupo
+            document.getElementById('allowOverbooking').addEventListener('change', function() {
+                schedule.allowOverbooking = this.checked;
+                saveSchedule();
+            });
         });
+        
+        // Configurar la hora de Chile continental
+        function setChileanTime() {
+            // Ajustar a la zona horaria de Chile (UTC-4 o UTC-3 dependiendo del horario de verano)
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            // Chile está en UTC-4 normalmente, UTC-3 en horario de verano
+            // Simplificación: asumimos UTC-4 por defecto
+            const chileTime = new Date(utc + (3600000 * -4));
+            
+            // Establecer la hora actual en los campos time
+            const timeString = chileTime.toTimeString().substr(0, 5);
+            document.getElementById('startTime').value = timeString;
+            
+            // Calcular una hora por defecto (sumar 1 hora)
+            const endTime = new Date(chileTime.getTime() + 60 * 60000);
+            const endTimeString = endTime.toTimeString().substr(0, 5);
+            document.getElementById('endTime').value = endTimeString;
+        }
         
         // Manejar la adición de horarios
         document.getElementById('addSchedule').addEventListener('click', function() {
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
+            const duration = parseInt(document.getElementById('appointmentDuration').value);
             
-            if (!startTime || !endTime) {
-                showAlert('Por favor, complete ambos horarios', 'error');
+            if (!startTime || !endTime || !duration) {
+                showAlert('Por favor, complete todos los campos', 'error');
                 return;
             }
             
@@ -633,6 +845,14 @@
                 showAlert('La hora de inicio debe ser anterior a la hora de fin', 'error');
                 return;
             }
+            
+            if (duration < 15) {
+                showAlert('La duración mínima de la cita es de 15 minutos', 'error');
+                return;
+            }
+            
+            // Guardar la duración
+            schedule.duration = duration;
             
             // Guardar el rango horario
             const timeRange = `${startTime} - ${endTime}`;
@@ -659,8 +879,15 @@
             
             // Validar que la hora esté disponible
             if (!isTimeAvailable(date, time)) {
-                showAlert('La hora seleccionada no está disponible', 'error');
-                return;
+                // Si no está disponible pero se permite sobrecupo, preguntar confirmación
+                if (schedule.allowOverbooking) {
+                    if (!confirm('Esta hora ya tiene una cita agendada. ¿Desea agendar de todas formas (sobrecupo)?')) {
+                        return;
+                    }
+                } else {
+                    showAlert('La hora seleccionada no está disponible', 'error');
+                    return;
+                }
             }
             
             // Crear nueva cita
@@ -671,7 +898,8 @@
                 date,
                 time,
                 paid,
-                notes
+                notes,
+                overbooking: !isTimeAvailable(date, time) // Marcar como sobrecupo si no estaba disponible
             };
             
             // Agregar a la lista
@@ -695,6 +923,81 @@
             generatePDF();
         });
         
+        // Configurar modal
+        function setupModal() {
+            const modal = document.getElementById('appointmentModal');
+            const closeBtn = document.querySelector('.close-modal');
+            const closeBtn2 = document.getElementById('closeModal');
+            
+            // Cerrar modal al hacer clic en la X
+            closeBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            // Cerrar modal al hacer clic en el botón de cerrar
+            closeBtn2.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            // Cerrar modal al hacer clic fuera del contenido
+            window.addEventListener('click', function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            
+            // Abrir modal al hacer clic en una cita
+            document.addEventListener('click', function(event) {
+                if (event.target.closest('tr') && !event.target.closest('.delete-app') && !event.target.closest('.toggle-paid')) {
+                    const row = event.target.closest('tr');
+                    if (row.dataset.id) {
+                        const id = parseInt(row.dataset.id);
+                        showAppointmentDetails(id);
+                    }
+                }
+            });
+        }
+        
+        // Mostrar detalles de la cita en el modal
+        function showAppointmentDetails(id) {
+            const appointment = appointments.find(app => app.id === id);
+            if (!appointment) return;
+            
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="appointment-detail">
+                    <span class="detail-label">RUT:</span>
+                    <span>${appointment.rut}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Nombre:</span>
+                    <span>${appointment.name}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Fecha:</span>
+                    <span>${formatDate(appointment.date)}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Hora:</span>
+                    <span>${appointment.time}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Estado de pago:</span>
+                    <span class="${appointment.paid ? 'paid' : 'not-paid'}">${appointment.paid ? 'Pagado' : 'No pagado'}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Sobrecupo:</span>
+                    <span>${appointment.overbooking ? 'Sí' : 'No'}</span>
+                </div>
+                <div class="appointment-detail">
+                    <span class="detail-label">Notas:</span>
+                    <span>${appointment.notes || 'Ninguna'}</span>
+                </div>
+            `;
+            
+            document.getElementById('appointmentModal').style.display = 'block';
+        }
+        
         // Funciones auxiliares
         function loadScheduleConfiguration() {
             // Cargar días de la semana seleccionados
@@ -714,6 +1017,11 @@
                 });
             });
             
+            // Cargar duración de citas
+            if (schedule.duration) {
+                document.getElementById('appointmentDuration').value = schedule.duration;
+            }
+            
             // Renderizar horarios guardados
             renderTimeSlots();
         }
@@ -726,7 +1034,7 @@
                 const slotElement = document.createElement('div');
                 slotElement.className = 'time-slot';
                 slotElement.innerHTML = `
-                    <i class="fas fa-clock"></i> ${slot}
+                    <i class="fas fa-clock"></i> ${slot} (${schedule.duration} min)
                     <button type="button" data-index="${index}"><i class="fas fa-times"></i></button>
                 `;
                 container.appendChild(slotElement);
@@ -746,9 +1054,11 @@
         function updateTimeOptions() {
             const date = document.getElementById('date').value;
             const timeSelect = document.getElementById('time');
+            const timeInfo = document.getElementById('timeOptionsInfo');
             
             // Limpiar opciones existentes
             timeSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+            timeInfo.innerHTML = '';
             
             if (!date) return;
             
@@ -761,27 +1071,43 @@
             // Verificar si este día está configurado para atención
             if (!schedule.days.includes(dayAbbr)) {
                 showAlert('No hay atención médica en la fecha seleccionada', 'error');
+                timeInfo.innerHTML = '<div class="time-option time-disabled">Día no laborable</div>';
                 return;
             }
             
             // Generar opciones de hora según los horarios configurados
+            let hasAvailableSlots = false;
+            
             schedule.timeSlots.forEach(slot => {
                 const [start, end] = slot.split(' - ');
                 const startMinutes = convertTimeToMinutes(start);
                 const endMinutes = convertTimeToMinutes(end);
+                const duration = schedule.duration || 45;
                 
-                for (let minutes = startMinutes; minutes < endMinutes; minutes += 45) {
+                for (let minutes = startMinutes; minutes < endMinutes; minutes += duration) {
                     const timeString = convertMinutesToTime(minutes);
+                    const available = isTimeAvailable(date, timeString);
                     
-                    // Solo agregar si el horario está disponible
-                    if (isTimeAvailable(date, timeString)) {
-                        const option = document.createElement('option');
-                        option.value = timeString;
-                        option.textContent = timeString;
-                        timeSelect.appendChild(option);
+                    // Crear opción para el select
+                    const option = document.createElement('option');
+                    option.value = timeString;
+                    option.textContent = timeString;
+                    
+                    if (!available) {
+                        option.disabled = true;
+                        option.textContent += ' (No disponible)';
+                    } else {
+                        hasAvailableSlots = true;
                     }
+                    
+                    timeSelect.appendChild(option);
                 }
             });
+            
+            // Mostrar información sobre disponibilidad
+            if (!hasAvailableSlots && schedule.timeSlots.length > 0) {
+                timeInfo.innerHTML = '<div class="time-option time-overbooking">No hay horarios disponibles. Puede usar sobrecupo si está habilitado.</div>';
+            }
         }
         
         function isTimeAvailable(date, time) {
@@ -794,14 +1120,22 @@
             tbody.innerHTML = '';
             
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filterDate = document.getElementById('filterDate').value;
             
             let filteredAppointments = appointments;
+            
+            // Aplicar filtro de búsqueda
             if (searchTerm) {
-                filteredAppointments = appointments.filter(app => 
+                filteredAppointments = filteredAppointments.filter(app => 
                     app.rut.toLowerCase().includes(searchTerm) || 
                     app.name.toLowerCase().includes(searchTerm) || 
                     app.date.includes(searchTerm)
                 );
+            }
+            
+            // Aplicar filtro de fecha
+            if (filterDate) {
+                filteredAppointments = filteredAppointments.filter(app => app.date === filterDate);
             }
             
             if (filteredAppointments.length === 0) {
@@ -818,29 +1152,52 @@
                 return dateA - dateB;
             });
             
+            // Agrupar citas por fecha
+            const groupedAppointments = {};
             filteredAppointments.forEach(app => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${app.rut}</td>
-                    <td>${app.name}</td>
-                    <td>${formatDate(app.date)}</td>
-                    <td>${app.time}</td>
-                    <td class="${app.paid ? 'paid' : 'not-paid'}">${app.paid ? 'Pagado' : 'No Pagado'}</td>
-                    <td>
-                        <button class="btn-warning toggle-paid" data-id="${app.id}">
-                            <i class="fas fa-exchange-alt"></i> Cambiar Pago
-                        </button>
-                        <button class="btn-danger delete-app" data-id="${app.id}">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </td>
+                if (!groupedAppointments[app.date]) {
+                    groupedAppointments[app.date] = [];
+                }
+                groupedAppointments[app.date].push(app);
+            });
+            
+            // Renderizar citas agrupadas por fecha
+            Object.keys(groupedAppointments).sort().forEach(date => {
+                // Encabezado de fecha
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'date-header';
+                headerRow.innerHTML = `
+                    <td colspan="6">${formatDate(date)}</td>
                 `;
-                tbody.appendChild(row);
+                tbody.appendChild(headerRow);
+                
+                // Citas para esta fecha
+                groupedAppointments[date].forEach(app => {
+                    const row = document.createElement('tr');
+                    row.dataset.id = app.id;
+                    row.innerHTML = `
+                        <td>${app.rut}</td>
+                        <td>${app.name}</td>
+                        <td>${formatDate(app.date)}</td>
+                        <td>${app.time} ${app.overbooking ? '<span style="color: var(--overbooking)">(Sobrecupo)</span>' : ''}</td>
+                        <td class="${app.paid ? 'paid' : 'not-paid'}">${app.paid ? 'Pagado' : 'No Pagado'}</td>
+                        <td>
+                            <button class="btn-warning toggle-paid" data-id="${app.id}">
+                                <i class="fas fa-exchange-alt"></i> Cambiar Pago
+                            </button>
+                            <button class="btn-danger delete-app" data-id="${app.id}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
             });
             
             // Agregar event listeners a los botones de eliminar
             document.querySelectorAll('.delete-app').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Evitar que se abra el modal
                     const id = parseInt(this.getAttribute('data-id'));
                     deleteAppointment(id);
                 });
@@ -848,7 +1205,8 @@
             
             // Agregar event listeners a los botones de cambiar estado de pago
             document.querySelectorAll('.toggle-paid').forEach(button => {
-                button.addEventListener('click', function() {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Evitar que se abra el modal
                     const id = parseInt(this.getAttribute('data-id'));
                     togglePaymentStatus(id);
                 });
@@ -924,7 +1282,7 @@
                         appEl.className = 'appointment-item';
                         appEl.innerHTML = `
                             <div>
-                                <div class="appointment-time">${app.time}</div>
+                                <div class="appointment-time">${app.time} ${app.overbooking ? '<span style="color: var(--overbooking)">(S)</span>' : ''}</div>
                                 <div>${app.name}</div>
                             </div>
                             <div class="appointment-actions">
@@ -955,7 +1313,7 @@
             }
         }
         
-        function generatePDF() {
+        function generatePDF(specificDate = null) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             
@@ -967,30 +1325,40 @@
             doc.setFontSize(12);
             doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
             
+            // Filtrar citas por fecha si se especifica
+            let pdfAppointments = appointments;
+            if (specificDate) {
+                pdfAppointments = appointments.filter(app => app.date === specificDate);
+                doc.text(`Fecha: ${formatDate(specificDate)}`, 105, 29, { align: 'center' });
+            }
+            
             // Datos de la tabla
-            const tableData = appointments.map(app => [
+            const tableData = pdfAppointments.map(app => [
                 app.rut,
                 app.name,
                 formatDate(app.date),
                 app.time,
-                app.paid ? 'Pagado' : 'No Pagado'
+                app.paid ? 'Pagado' : 'No Pagado',
+                app.overbooking ? 'Sí' : 'No'
             ]);
             
             // Crear tabla
             doc.autoTable({
-                head: [['RUT', 'Nombre', 'Fecha', 'Hora', 'Estado Pago']],
+                head: [['RUT', 'Nombre', 'Fecha', 'Hora', 'Estado Pago', 'Sobrecupo']],
                 body: tableData,
-                startY: 30,
+                startY: specificDate ? 36 : 30,
                 styles: { fontSize: 10 },
                 headStyles: { fillColor: [44, 127, 190] },
                 alternateRowStyles: { fillColor: [240, 240, 240] },
                 columnStyles: {
-                    4: { cellWidth: 25 }
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 20 }
                 }
             });
             
             // Guardar PDF
-            doc.save('citas_medicas.pdf');
+            const fileName = specificDate ? `citas_${specificDate}.pdf` : 'citas_medicas.pdf';
+            doc.save(fileName);
         }
         
         function saveAppointments() {
@@ -1025,25 +1393,6 @@
         function formatDate(dateStr) {
             const [year, month, day] = dateStr.split('-');
             return `${day}/${month}/${year}`;
-        }
-        
-        function setupWeekSelector() {
-            const weekSelector = document.getElementById('weekSelector');
-            const now = new Date();
-            
-            // Establecer la semana actual
-            const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
-            const pastDaysOfYear = (now - firstDayOfYear) / 86400000;
-            const currentWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-            
-            weekSelector.value = `${now.getFullYear()}-W${currentWeek.toString().padStart(2, '0')}`;
-            
-            weekSelector.addEventListener('change', function() {
-                const [year, week] = this.value.split('-W');
-                const firstDay = new Date(year, 0, 1 + (week - 1) * 7);
-                currentWeek.setTime(firstDay.getTime());
-                generateCalendar();
-            });
         }
         
         function setupTabs() {
