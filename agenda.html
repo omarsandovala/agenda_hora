@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Citas Médicas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c7fbe;
+            --primary-dark: #1a5c8d;
+            --secondary: #4caf50;
+            --danger: #f44336;
+            --warning: #ff9800;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --background: #f5f7f9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        input, select, button, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #3d8b40;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+        }
+        
+        .btn-warning:hover {
+            background-color: #e68a00;
+        }
+        
+        .flex-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .flex-row > div {
+            flex: 1;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background-color: var(--primary);
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        
+        .paid {
+            color: var(--secondary);
+            font-weight: bold;
+        }
+        
+        .not-paid {
+            color: var(--danger);
+            font-weight: bold;
+        }
+        
+        .day-checkbox {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 10px;
+            background: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .day-checkbox:hover {
+            background: #e0e0e0;
+        }
+        
+        .day-checkbox input {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .time-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .time-slot {
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .time-slot button {
+            width: auto;
+            padding: 4px 8px;
+            margin-left: 8px;
+            background-color: var(--danger);
+        }
+        
+        .alert {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .calendar-day {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 150px;
+            background: white;
+            transition: all 0.3s;
+        }
+        
+        .calendar-day:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .calendar-day.disabled {
+            background-color: #f8f9fa;
+            color: var(--gray);
+            cursor: not-allowed;
+        }
+        
+        .calendar-day-header {
+            font-weight: bold;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        
+        .appointment-item {
+            background: #f0f7ff;
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .appointment-time {
+            font-weight: bold;
+        }
+        
+        .appointment-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .appointment-actions button {
+            padding: 3px 6px;
+            font-size: 0.8rem;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #e0e0e0;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .calendar {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        
+        @media (max-width: 992px) {
+            .calendar {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .flex-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .calendar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .calendar {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1><i class="fas fa-calendar-check"></i> Sistema de Citas Médicas</h1>
+                <p>Gestiona tus citas de forma eficiente y organizada</p>
+            </div>
+            <button id="generatePdf" class="btn-secondary">
+                <i class="fas fa-file-pdf"></i> Generar PDF
+            </button>
+        </header>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalAppointments">0</div>
+                <div class="stat-label">Citas Totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="paidAppointments">0</div>
+                <div class="stat-label">Citas Pagadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingAppointments">0</div>
+                <div class="stat-label">Citas Pendientes</div>
+            </div>
+        </div>
+        
+        <div class="alert alert-success" id="successAlert"></div>
+        <div class="alert alert-error" id="errorAlert"></div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="config">Configuración</div>
+            <div class="tab" data-tab="schedule">Agendar Cita</div>
+            <div class="tab" data-tab="calendar">Vista por Días</div>
+            <div class="tab" data-tab="list">Lista de Citas</div>
+        </div>
+        
+        <div class="tab-content active" id="config-tab">
+            <div class="card">
+                <h2><i class="fas fa-cog"></i> Configuración de Agenda</h2>
+                <div class="form-group">
+                    <label>Días de atención:</label>
+                    <div>
+                        <label class="day-checkbox"><input type="checkbox" id="mon"> <i class="fas fa-calendar-day"></i> Lunes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="tue"> <i class="fas fa-calendar-day"></i> Martes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="wed"> <i class="fas fa-calendar-day"></i> Miércoles</label>
+                        <label class="day-checkbox"><input type="checkbox" id="thu"> <i class="fas fa-calendar-day"></i> Jueves</label>
+                        <label class="day-checkbox"><input type="checkbox" id="fri"> <i class="fas fa-calendar-day"></i> Viernes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="sat"> <i class="fas fa-calendar-day"></i> Sábado</label>
+                        <label class="day-checkbox"><input type="checkbox" id="sun"> <i class="fas fa-calendar-day"></i> Domingo</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horario de atención:</label>
+                    <div class="flex-row">
+                        <div>
+                            <label>Hora de inicio:</label>
+                            <input type="time" id="startTime" value="09:00">
+                        </div>
+                        <div>
+                            <label>Hora de fin:</label>
+                            <input type="time" id="endTime" value="17:00">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button id="addSchedule"><i class="fas fa-plus"></i> Aplicar Horario</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horarios configurados:</label>
+                    <div id="timeSlots" class="time-slots">
+                        <!-- Los horarios se agregarán aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="schedule-tab">
+            <div class="card">
+                <h2><i class="fas fa-calendar-plus"></i> Agendar Nueva Cita</h2>
+                <form id="appointmentForm">
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="rut"><i class="fas fa-id-card"></i> RUT del paciente:</label>
+                            <input type="text" id="rut" placeholder="12345678-9" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="name"><i class="fas fa-user"></i> Nombre del paciente:</label>
+                            <input type="text" id="name" placeholder="Juan Pérez" required>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="date"><i class="fas fa-calendar"></i> Fecha de la cita:</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="time"><i class="fas fa-clock"></i> Hora de la cita:</label>
+                            <select id="time" required>
+                                <option value="">Seleccione una hora</option>
+                                <!-- Las opciones de hora se llenarán con JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="paid"><i class="fas fa-money-bill-wave"></i> Estado de pago:</label>
+                        <select id="paid" required>
+                            <option value="true">Pagado</option>
+                            <option value="false">No pagado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notes"><i class="fas fa-sticky-note"></i> Notas (opcional):</label>
+                        <textarea id="notes" rows="3" placeholder="Notas adicionales sobre la cita..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-secondary"><i class="fas fa-save"></i> Agendar Cita</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="calendar-tab">
+            <div class="card">
+                <h2><i class="fas fa-calendar-week"></i> Vista de Citas por Día</h2>
+                <div class="flex-row">
+                    <div class="form-group">
+                        <label for="weekSelector">Seleccionar semana:</label>
+                        <input type="week" id="weekSelector">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button id="prevWeek"><i class="fas fa-chevron-left"></i> Semana anterior</button>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button id="nextWeek">Semana siguiente <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <div id="calendar" class="calendar">
+                    <!-- Los días del calendario se generarán con JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="list-tab">
+            <div class="card">
+                <h2><i class="fas fa-list"></i> Todas las Citas Agendadas</h2>
+                <div class="form-group">
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre, RUT o fecha...">
+                </div>
+                <table id="appointmentsTable">
+                    <thead>
+                        <tr>
+                            <th>RUT</th>
+                            <th>Nombre</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Estado Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Las citas se agregarán aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        let schedule = JSON.parse(localStorage.getItem('schedule')) || { days: [], timeSlots: [] };
+        let currentWeek = new Date();
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar configuración existente
+            loadScheduleConfiguration();
+            
+            // Cargar días seleccionados
+            if (schedule.days.length > 0) {
+                schedule.days.forEach(day => {
+                    const checkbox = document.getElementById(day);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+            
+            // Cargar citas existentes
+            renderAppointments();
+            updateStats();
+            
+            // Configurar fecha mínima como hoy
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').setAttribute('min', today);
+            
+            // Actualizar opciones de hora cuando cambia la fecha
+            document.getElementById('date').addEventListener('change', updateTimeOptions);
+            
+            // Configurar selector de semana
+            setupWeekSelector();
+            
+            // Generar calendario
+            generateCalendar();
+            
+            // Configurar pestañas
+            setupTabs();
+            
+            // Configurar búsqueda
+            document.getElementById('searchInput').addEventListener('input', renderAppointments);
+            
+            // Navegación entre semanas
+            document.getElementById('prevWeek').addEventListener('click', function() {
+                currentWeek.setDate(currentWeek.getDate() - 7);
+                generateCalendar();
+            });
+            
+            document.getElementById('nextWeek').addEventListener('click', function() {
+                currentWeek.setDate(currentWeek.getDate() + 7);
+                generateCalendar();
+            });
+        });
+        
+        // Manejar la adición de horarios
+        document.getElementById('addSchedule').addEventListener('click', function() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!startTime || !endTime) {
+                showAlert('Por favor, complete ambos horarios', 'error');
+                return;
+            }
+            
+            // Convertir a minutos para facilitar la comparación
+            const startMinutes = convertTimeToMinutes(startTime);
+            const endMinutes = convertTimeToMinutes(endTime);
+            
+            if (startMinutes >= endMinutes) {
+                showAlert('La hora de inicio debe ser anterior a la hora de fin', 'error');
+                return;
+            }
+            
+            // Guardar el rango horario
+            const timeRange = `${startTime} - ${endTime}`;
+            if (!schedule.timeSlots.includes(timeRange)) {
+                schedule.timeSlots.push(timeRange);
+                saveSchedule();
+                renderTimeSlots();
+                showAlert('Horario agregado correctamente', 'success');
+            } else {
+                showAlert('Este horario ya fue agregado', 'error');
+            }
+        });
+        
+        // Manejar el envío del formulario de cita
+        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const rut = document.getElementById('rut').value;
+            const name = document.getElementById('name').value;
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const paid = document.getElementById('paid').value === 'true';
+            const notes = document.getElementById('notes').value;
+            
+            // Validar que la hora esté disponible
+            if (!isTimeAvailable(date, time)) {
+                showAlert('La hora seleccionada no está disponible', 'error');
+                return;
+            }
+            
+            // Crear nueva cita
+            const newAppointment = {
+                id: Date.now(), // ID único
+                rut,
+                name,
+                date,
+                time,
+                paid,
+                notes
+            };
+            
+            // Agregar a la lista
+            appointments.push(newAppointment);
+            saveAppointments();
+            renderAppointments();
+            updateStats();
+            generateCalendar();
+            
+            // Reiniciar formulario
+            document.getElementById('appointmentForm').reset();
+            
+            showAlert('Cita agendada correctamente', 'success');
+            
+            // Cambiar a la pestaña de calendario
+            switchTab('calendar');
+        });
+        
+        // Generar PDF
+        document.getElementById('generatePdf').addEventListener('click', function() {
+            generatePDF();
+        });
+        
+        // Funciones auxiliares
+        function loadScheduleConfiguration() {
+            // Cargar días de la semana seleccionados
+            const dayCheckboxes = document.querySelectorAll('input[type="checkbox"][id]');
+            dayCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const day = this.id;
+                    if (this.checked) {
+                        if (!schedule.days.includes(day)) {
+                            schedule.days.push(day);
+                        }
+                    } else {
+                        schedule.days = schedule.days.filter(d => d !== day);
+                    }
+                    saveSchedule();
+                    generateCalendar();
+                });
+            });
+            
+            // Renderizar horarios guardados
+            renderTimeSlots();
+        }
+        
+        function renderTimeSlots() {
+            const container = document.getElementById('timeSlots');
+            container.innerHTML = '';
+            
+            schedule.timeSlots.forEach((slot, index) => {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'time-slot';
+                slotElement.innerHTML = `
+                    <i class="fas fa-clock"></i> ${slot}
+                    <button type="button" data-index="${index}"><i class="fas fa-times"></i></button>
+                `;
+                container.appendChild(slotElement);
+            });
+            
+            // Agregar event listeners a los botones de eliminar
+            document.querySelectorAll('.time-slot button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    schedule.timeSlots.splice(index, 1);
+                    saveSchedule();
+                    renderTimeSlots();
+                });
+            });
+        }
+        
+        function updateTimeOptions() {
+            const date = document.getElementById('date').value;
+            const timeSelect = document.getElementById('time');
+            
+            // Limpiar opciones existentes
+            timeSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+            
+            if (!date) return;
+            
+            // Obtener el día de la semana (0: domingo, 1: lunes, etc.)
+            const dateObj = new Date(date);
+            const dayIndex = dateObj.getDay();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const dayAbbr = days[dayIndex];
+            
+            // Verificar si este día está configurado para atención
+            if (!schedule.days.includes(dayAbbr)) {
+                showAlert('No hay atención médica en la fecha seleccionada', 'error');
+                return;
+            }
+            
+            // Generar opciones de hora según los horarios configurados
+            schedule.timeSlots.forEach(slot => {
+                const [start, end] = slot.split(' - ');
+                const startMinutes = convertTimeToMinutes(start);
+                const endMinutes = convertTimeToMinutes(end);
+                
+                for (let minutes = startMinutes; minutes < endMinutes; minutes += 45) {
+                    const timeString = convertMinutesToTime(minutes);
+                    
+                    // Solo agregar si el horario está disponible
+                    if (isTimeAvailable(date, timeString)) {
+                        const option = document.createElement('option');
+                        option.value = timeString;
+                        option.textContent = timeString;
+                        timeSelect.appendChild(option);
+                    }
+                }
+            });
+        }
+        
+        function isTimeAvailable(date, time) {
+            // Verificar si ya existe una cita a la misma hora
+            return !appointments.some(app => app.date === date && app.time === time);
+        }
+        
+        function renderAppointments() {
+            const tbody = document.querySelector('#appointmentsTable tbody');
+            tbody.innerHTML = '';
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredAppointments = appointments;
+            if (searchTerm) {
+                filteredAppointments = appointments.filter(app => 
+                    app.rut.toLowerCase().includes(searchTerm) || 
+                    app.name.toLowerCase().includes(searchTerm) || 
+                    app.date.includes(searchTerm)
+                );
+            }
+            
+            if (filteredAppointments.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="6" style="text-align: center;">No hay citas agendadas</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            
+            // Ordenar citas por fecha y hora
+            filteredAppointments.sort((a, b) => {
+                const dateA = new Date(`${a.date}T${a.time}`);
+                const dateB = new Date(`${b.date}T${b.time}`);
+                return dateA - dateB;
+            });
+            
+            filteredAppointments.forEach(app => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${app.rut}</td>
+                    <td>${app.name}</td>
+                    <td>${formatDate(app.date)}</td>
+                    <td>${app.time}</td>
+                    <td class="${app.paid ? 'paid' : 'not-paid'}">${app.paid ? 'Pagado' : 'No Pagado'}</td>
+                    <td>
+                        <button class="btn-warning toggle-paid" data-id="${app.id}">
+                            <i class="fas fa-exchange-alt"></i> Cambiar Pago
+                        </button>
+                        <button class="btn-danger delete-app" data-id="${app.id}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Agregar event listeners a los botones de eliminar
+            document.querySelectorAll('.delete-app').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteAppointment(id);
+                });
+            });
+            
+            // Agregar event listeners a los botones de cambiar estado de pago
+            document.querySelectorAll('.toggle-paid').forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    togglePaymentStatus(id);
+                });
+            });
+        }
+        
+        function deleteAppointment(id) {
+            if (confirm('¿Está seguro de que desea eliminar esta cita?')) {
+                appointments = appointments.filter(app => app.id !== id);
+                saveAppointments();
+                renderAppointments();
+                updateStats();
+                generateCalendar();
+                showAlert('Cita eliminada correctamente', 'success');
+            }
+        }
+        
+        function togglePaymentStatus(id) {
+            appointments = appointments.map(app => {
+                if (app.id === id) {
+                    return { ...app, paid: !app.paid };
+                }
+                return app;
+            });
+            saveAppointments();
+            renderAppointments();
+            updateStats();
+            generateCalendar();
+            showAlert('Estado de pago actualizado', 'success');
+        }
+        
+        function generateCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendarEl.innerHTML = '';
+            
+            // Obtener el lunes de la semana actual
+            const monday = new Date(currentWeek);
+            monday.setDate(monday.getDate() - monday.getDay() + 1);
+            
+            // Generar los 7 días de la semana
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(monday);
+                day.setDate(monday.getDate() + i);
+                
+                const dayAbbr = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][day.getDay()];
+                const dayName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][day.getDay()];
+                const dateStr = day.toISOString().split('T')[0];
+                
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                
+                // Deshabilitar días no laborables
+                if (!schedule.days.includes(dayAbbr)) {
+                    dayEl.classList.add('disabled');
+                }
+                
+                const headerEl = document.createElement('div');
+                headerEl.className = 'calendar-day-header';
+                headerEl.textContent = `${dayName} ${formatDate(dateStr)}`;
+                
+                dayEl.appendChild(headerEl);
+                
+                // Agregar citas para este día
+                const dayAppointments = appointments.filter(app => app.date === dateStr);
+                
+                if (dayAppointments.length > 0) {
+                    dayAppointments.sort((a, b) => {
+                        return convertTimeToMinutes(a.time) - convertTimeToMinutes(b.time);
+                    });
+                    
+                    dayAppointments.forEach(app => {
+                        const appEl = document.createElement('div');
+                        appEl.className = 'appointment-item';
+                        appEl.innerHTML = `
+                            <div>
+                                <div class="appointment-time">${app.time}</div>
+                                <div>${app.name}</div>
+                            </div>
+                            <div class="appointment-actions">
+                                <button class="${app.paid ? 'paid' : 'not-paid'}" style="width: auto; padding: 2px 5px;">
+                                    <i class="fas ${app.paid ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                </button>
+                            </div>
+                        `;
+                        dayEl.appendChild(appEl);
+                    });
+                } else if (schedule.days.includes(dayAbbr)) {
+                    const noAppsEl = document.createElement('div');
+                    noAppsEl.textContent = 'No hay citas agendadas';
+                    noAppsEl.style.textAlign = 'center';
+                    noAppsEl.style.padding = '10px';
+                    noAppsEl.style.color = '#6c757d';
+                    dayEl.appendChild(noAppsEl);
+                } else {
+                    const closedEl = document.createElement('div');
+                    closedEl.textContent = 'Día no laborable';
+                    closedEl.style.textAlign = 'center';
+                    closedEl.style.padding = '10px';
+                    closedEl.style.color = '#6c757d';
+                    dayEl.appendChild(closedEl);
+                }
+                
+                calendarEl.appendChild(dayEl);
+            }
+        }
+        
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Título
+            doc.setFontSize(20);
+            doc.text('Listado de Citas Médicas', 105, 15, { align: 'center' });
+            
+            // Fecha de generación
+            doc.setFontSize(12);
+            doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 105, 22, { align: 'center' });
+            
+            // Datos de la tabla
+            const tableData = appointments.map(app => [
+                app.rut,
+                app.name,
+                formatDate(app.date),
+                app.time,
+                app.paid ? 'Pagado' : 'No Pagado'
+            ]);
+            
+            // Crear tabla
+            doc.autoTable({
+                head: [['RUT', 'Nombre', 'Fecha', 'Hora', 'Estado Pago']],
+                body: tableData,
+                startY: 30,
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [44, 127, 190] },
+                alternateRowStyles: { fillColor: [240, 240, 240] },
+                columnStyles: {
+                    4: { cellWidth: 25 }
+                }
+            });
+            
+            // Guardar PDF
+            doc.save('citas_medicas.pdf');
+        }
+        
+        function saveAppointments() {
+            localStorage.setItem('appointments', JSON.stringify(appointments));
+        }
+        
+        function saveSchedule() {
+            localStorage.setItem('schedule', JSON.stringify(schedule));
+        }
+        
+        function showAlert(message, type) {
+            const alert = document.getElementById(type === 'success' ? 'successAlert' : 'errorAlert');
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+        
+        function convertTimeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+        
+        function convertMinutesToTime(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        }
+        
+        function formatDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        
+        function setupWeekSelector() {
+            const weekSelector = document.getElementById('weekSelector');
+            const now = new Date();
+            
+            // Establecer la semana actual
+            const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+            const pastDaysOfYear = (now - firstDayOfYear) / 86400000;
+            const currentWeek = Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+            
+            weekSelector.value = `${now.getFullYear()}-W${currentWeek.toString().padStart(2, '0')}`;
+            
+            weekSelector.addEventListener('change', function() {
+                const [year, week] = this.value.split('-W');
+                const firstDay = new Date(year, 0, 1 + (week - 1) * 7);
+                currentWeek.setTime(firstDay.getTime());
+                generateCalendar();
+            });
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+        }
+        
+        function switchTab(tabName) {
+            // Desactivar todas las pestañas
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Activar la pestaña seleccionada
+            document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Si es la pestaña de calendario, regenerar el calendario
+            if (tabName === 'calendar') {
+                generateCalendar();
+            }
+            
+            // Si es la pestaña de lista, regenerar la lista
+            if (tabName === 'list') {
+                renderAppointments();
+            }
+        }
+        
+        function updateStats() {
+            document.getElementById('totalAppointments').textContent = appointments.length;
+            document.getElementById('paidAppointments').textContent = appointments.filter(app => app.paid).length;
+            document.getElementById('pendingAppointments').textContent = appointments.filter(app => !app.paid).length;
+        }
+    </script>
+</body>
+</html>
