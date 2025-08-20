@@ -463,6 +463,12 @@
             margin-right: 10px;
         }
         
+        /* Botón de sobrecupo en formulario */
+        .overbooking-button {
+            margin-top: 10px;
+            display: none;
+        }
+        
         @media (max-width: 1200px) {
             .calendar {
                 grid-template-columns: repeat(5, 1fr);
@@ -519,9 +525,7 @@
                 <h1><i class="fas fa-calendar-check"></i> Sistema de Citas Médicas</h1>
                 <p>Gestiona tus citas de forma eficiente y organizada</p>
             </div>
-            <button id="generatePdf" class="btn-secondary">
-                <i class="fas fa-file-pdf"></i> Generar PDF
-            </button>
+            
         </header>
         
         <div class="stats">
@@ -543,67 +547,13 @@
         <div class="alert alert-error" id="errorAlert"></div>
         
         <div class="tabs">
-            <div class="tab active" data-tab="config">Configuración</div>
-            <div class="tab" data-tab="schedule">Agendar Cita</div>
+            <div class="tab active" data-tab="schedule">Agendar Cita</div>
             <div class="tab" data-tab="calendar">Vista por Días</div>
             <div class="tab" data-tab="list">Lista de Citas</div>
+            <div class="tab" data-tab="config">Configuración</div>
         </div>
         
-        <div class="tab-content active" id="config-tab">
-            <div class="card">
-                <h2><i class="fas fa-cog"></i> Configuración de Agenda</h2>
-                <div class="form-group">
-                    <label>Días de atención:</label>
-                    <div>
-                        <label class="day-checkbox"><input type="checkbox" id="mon"> <i class="fas fa-calendar-day"></i> Lunes</label>
-                        <label class="day-checkbox"><input type="checkbox" id="tue"> <i class="fas fa-calendar-day"></i> Martes</label>
-                        <label class="day-checkbox"><input type="checkbox" id="wed"> <i class="fas fa-calendar-day"></i> Miércoles</label>
-                        <label class="day-checkbox"><input type="checkbox" id="thu"> <i class="fas fa-calendar-day"></i> Jueves</label>
-                        <label class="day-checkbox"><input type="checkbox" id="fri"> <i class="fas fa-calendar-day"></i> Viernes</label>
-                        <label class="day-checkbox"><input type="checkbox" id="sat"> <i class="fas fa-calendar-day"></i> Sábado</label>
-                        <label class="day-checkbox"><input type="checkbox" id="sun"> <i class="fas fa-calendar-day"></i> Domingo</label>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Horario de atención:</label>
-                    <div class="flex-row">
-                        <div>
-                            <label>Hora de inicio:</label>
-                            <input type="time" id="startTime" value="09:00">
-                        </div>
-                        <div>
-                            <label>Hora de fin:</label>
-                            <input type="time" id="endTime" value="17:00">
-                        </div>
-                        <div>
-                            <label>Duración de cita (minutos):</label>
-                            <input type="number" id="appointmentDuration" value="45" min="15" step="15">
-                        </div>
-                        <div style="display: flex; align-items: flex-end;">
-                            <button id="addSchedule"><i class="fas fa-plus"></i> Aplicar Horario</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Horarios configurados:</label>
-                    <div id="timeSlots" class="time-slots">
-                        <!-- Los horarios se agregarán aquí -->
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Configuración de sobrecupo:</label>
-                    <div class="overbooking-container">
-                        <input type="checkbox" id="allowOverbooking">
-                        <label for="allowOverbooking">Permitir sobrecupo en los días de atención</label>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="tab-content" id="schedule-tab">
+        <div class="tab-content active" id="schedule-tab">
             <div class="card">
                 <h2><i class="fas fa-calendar-plus"></i> Agendar Nueva Cita</h2>
                 <form id="appointmentForm">
@@ -647,7 +597,64 @@
                     </div>
                     
                     <button type="submit" class="btn-secondary"><i class="fas fa-save"></i> Agendar Cita</button>
+                    <button type="button" id="forceOverbooking" class="btn-overbooking overbooking-button">
+                        <i class="fas fa-exclamation-triangle"></i> Agendar con Sobrecupo
+                    </button>
                 </form>
+            </div>
+            
+            <!-- Nuevo formulario para sobrecupo -->
+            <div class="card" id="overbookingFormContainer" style="display: none;">
+                <h2><i class="fas fa-calendar-plus"></i> Agendar Sobrecupo</h2>
+                <form id="overbookingForm">
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="overbookingRut"><i class="fas fa-id-card"></i> RUT del paciente:</label>
+                            <input type="text" id="overbookingRut" placeholder="12345678-9" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="overbookingName"><i class="fas fa-user"></i> Nombre del paciente:</label>
+                            <input type="text" id="overbookingName" placeholder="Juan Pérez" required>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-row">
+                        <div class="form-group">
+                            <label for="overbookingDate"><i class="fas fa-calendar"></i> Fecha de la cita:</label>
+                            <input type="date" id="overbookingDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="overbookingTime"><i class="fas fa-clock"></i> Hora de la cita:</label>
+                            <select id="overbookingTime" required>
+                                <option value="">Seleccione una hora</option>
+                                <!-- Las opciones de hora se llenarán con JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="overbookingPaid"><i class="fas fa-money-bill-wave"></i> Estado de pago:</label>
+                        <select id="overbookingPaid" required>
+                            <option value="true">Pagado</option>
+                            <option value="false">No pagado</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="overbookingNotes"><i class="fas fa-sticky-note"></i> Notas (opcional):</label>
+                        <textarea id="overbookingNotes" rows="3" placeholder="Notas adicionales sobre la cita..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-overbooking"><i class="fas fa-save"></i> Agendar Sobrecupo</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-exclamation-triangle"></i> Agendar Sobrecupo</h2>
+                <p>Utilice esta opción para agendar una cita en un horario ya ocupado o en un día no laborable.</p>
+                <button id="showOverbookingForm" class="btn-overbooking">
+                    <i class="fas fa-calendar-plus"></i> Mostrar Formulario de Sobrecupo
+                </button>
             </div>
         </div>
         
@@ -687,6 +694,11 @@
                             <i class="fas fa-file-pdf"></i> PDF por Fecha
                         </button>
                     </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button id="showAllAppointments" class="btn-secondary">
+                            <i class="fas fa-eye"></i> Mostrar Todas
+                        </button>
+                    </div>
                 </div>
                 <table id="appointmentsTable">
                     <thead>
@@ -696,6 +708,7 @@
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Estado Pago</th>
+                            <th>Sobrecupo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -703,6 +716,52 @@
                         <!-- Las citas se agregarán aquí -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="config-tab">
+            <div class="card">
+                <h2><i class="fas fa-cog"></i> Configuración de Agenda</h2>
+                <div class="form-group">
+                    <label>Días de atención:</label>
+                    <div>
+                        <label class="day-checkbox"><input type="checkbox" id="mon"> <i class="fas fa-calendar-day"></i> Lunes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="tue"> <i class="fas fa-calendar-day"></i> Martes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="wed"> <i class="fas fa-calendar-day"></i> Miércoles</label>
+                        <label class="day-checkbox"><input type="checkbox" id="thu"> <i class="fas fa-calendar-day"></i> Jueves</label>
+                        <label class="day-checkbox"><input type="checkbox" id="fri"> <i class="fas fa-calendar-day"></i> Viernes</label>
+                        <label class="day-checkbox"><input type="checkbox" id="sat"> <i class="fas fa-calendar-day"></i> Sábado</label>
+                        <label class="day-checkbox"><input type="checkbox" id="sun"> <i class="fas fa-calendar-day"></i> Domingo</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horario de atención:</label>
+                    <div class="flex-row">
+                        <div>
+                            <label>Hora de inicio:</label>
+                            <input type="time" id="startTime" value="09:00">
+                        </div>
+                        <div>
+                            <label>Hora de fin:</label>
+                            <input type="time" id="endTime" value="17:00">
+                        </div>
+                        <div>
+                            <label>Duración de cita (minutos):</label>
+                            <input type="number" id="appointmentDuration" value="45" min="15" step="15">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button id="addSchedule"><i class="fas fa-plus"></i> Aplicar Horario</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horarios configurados:</label>
+                    <div id="timeSlots" class="time-slots">
+                        <!-- Los horarios se agregarán aquí -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -729,10 +788,10 @@
         let schedule = JSON.parse(localStorage.getItem('schedule')) || { 
             days: [], 
             timeSlots: [],
-            duration: 45,
-            allowOverbooking: false
+            duration: 45
         };
         let currentWeek = new Date();
+        let isOverbookingMode = false;
         
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
@@ -750,9 +809,6 @@
                 });
             }
             
-            // Cargar configuración de sobrecupo
-            document.getElementById('allowOverbooking').checked = schedule.allowOverbooking || false;
-            
             // Cargar citas existentes
             renderAppointments();
             updateStats();
@@ -760,10 +816,12 @@
             // Configurar fecha mínima como hoy
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date').setAttribute('min', today);
+            document.getElementById('overbookingDate').setAttribute('min', today);
             document.getElementById('filterDate').setAttribute('min', today);
             
             // Actualizar opciones de hora cuando cambia la fecha
             document.getElementById('date').addEventListener('change', updateTimeOptions);
+            document.getElementById('overbookingDate').addEventListener('change', updateOverbookingTimeOptions);
             
             // Generar calendario
             generateCalendar();
@@ -800,10 +858,62 @@
                 generatePDF(filterDate);
             });
             
-            // Configurar sobrecupo
-            document.getElementById('allowOverbooking').addEventListener('change', function() {
-                schedule.allowOverbooking = this.checked;
-                saveSchedule();
+            // Mostrar todas las citas
+            document.getElementById('showAllAppointments').addEventListener('click', function() {
+                document.getElementById('searchInput').value = '';
+                document.getElementById('filterDate').value = '';
+                renderAppointments();
+            });
+            
+            // Configurar botón de sobrecupo
+            document.getElementById('forceOverbooking').addEventListener('click', function() {
+                isOverbookingMode = true;
+                document.getElementById('appointmentForm').dispatchEvent(new Event('submit'));
+            });
+            
+            // Mostrar formulario de sobrecupo
+            document.getElementById('showOverbookingForm').addEventListener('click', function() {
+                const formContainer = document.getElementById('overbookingFormContainer');
+                formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Manejar envío de formulario de sobrecupo
+            document.getElementById('overbookingForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const rut = document.getElementById('overbookingRut').value;
+                const name = document.getElementById('overbookingName').value;
+                const date = document.getElementById('overbookingDate').value;
+                const time = document.getElementById('overbookingTime').value;
+                const paid = document.getElementById('overbookingPaid').value === 'true';
+                const notes = document.getElementById('overbookingNotes').value;
+                
+                // Crear nueva cita con sobrecupo
+                const newAppointment = {
+                    id: Date.now(), // ID único
+                    rut,
+                    name,
+                    date,
+                    time,
+                    paid,
+                    notes,
+                    overbooking: true // Siempre es sobrecupo
+                };
+                
+                // Agregar a la lista
+                appointments.push(newAppointment);
+                saveAppointments();
+                renderAppointments();
+                updateStats();
+                generateCalendar();
+                
+                // Reiniciar formulario
+                document.getElementById('overbookingForm').reset();
+                
+                showAlert('Sobrecupo agendado correctamente', 'success');
+                
+                // Cambiar a la pestaña de calendario
+                switchTab('calendar');
             });
         });
         
@@ -877,17 +987,22 @@
             const paid = document.getElementById('paid').value === 'true';
             const notes = document.getElementById('notes').value;
             
+            // Validar que el día sea laborable
+            const dateObj = new Date(date);
+            const dayIndex = dateObj.getDay();
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const dayAbbr = days[dayIndex];
+            
+            if (!schedule.days.includes(dayAbbr) && !isOverbookingMode) {
+                showAlert('No hay atención médica en la fecha seleccionada', 'error');
+                return;
+            }
+            
             // Validar que la hora esté disponible
-            if (!isTimeAvailable(date, time)) {
-                // Si no está disponible pero se permite sobrecupo, preguntar confirmación
-                if (schedule.allowOverbooking) {
-                    if (!confirm('Esta hora ya tiene una cita agendada. ¿Desea agendar de todas formas (sobrecupo)?')) {
-                        return;
-                    }
-                } else {
-                    showAlert('La hora seleccionada no está disponible', 'error');
-                    return;
-                }
+            if (!isTimeAvailable(date, time) && !isOverbookingMode) {
+                document.getElementById('forceOverbooking').style.display = 'block';
+                showAlert('Esta hora ya tiene una cita agendada. ¿Desea agendar con sobrecupo?', 'error');
+                return;
             }
             
             // Crear nueva cita
@@ -899,7 +1014,7 @@
                 time,
                 paid,
                 notes,
-                overbooking: !isTimeAvailable(date, time) // Marcar como sobrecupo si no estaba disponible
+                overbooking: !isTimeAvailable(date, time) || !schedule.days.includes(dayAbbr) // Marcar como sobrecupo si no estaba disponible o no es día laborable
             };
             
             // Agregar a la lista
@@ -909,8 +1024,10 @@
             updateStats();
             generateCalendar();
             
-            // Reiniciar formulario
+            // Reiniciar formulario y estado de sobrecupo
             document.getElementById('appointmentForm').reset();
+            document.getElementById('forceOverbooking').style.display = 'none';
+            isOverbookingMode = false;
             
             showAlert('Cita agendada correctamente', 'success');
             
@@ -1060,6 +1177,10 @@
             timeSelect.innerHTML = '<option value="">Seleccione una hora</option>';
             timeInfo.innerHTML = '';
             
+            // Ocultar botón de sobrecupo al cambiar fecha
+            document.getElementById('forceOverbooking').style.display = 'none';
+            isOverbookingMode = false;
+            
             if (!date) return;
             
             // Obtener el día de la semana (0: domingo, 1: lunes, etc.)
@@ -1110,6 +1231,35 @@
             }
         }
         
+        function updateOverbookingTimeOptions() {
+            const date = document.getElementById('overbookingDate').value;
+            const timeSelect = document.getElementById('overbookingTime');
+            
+            // Limpiar opciones existentes
+            timeSelect.innerHTML = '<option value="">Seleccione una hora</option>';
+            
+            if (!date) return;
+            
+            // Generar opciones de hora según los horarios configurados
+            schedule.timeSlots.forEach(slot => {
+                const [start, end] = slot.split(' - ');
+                const startMinutes = convertTimeToMinutes(start);
+                const endMinutes = convertTimeToMinutes(end);
+                const duration = schedule.duration || 45;
+                
+                for (let minutes = startMinutes; minutes < endMinutes; minutes += duration) {
+                    const timeString = convertMinutesToTime(minutes);
+                    
+                    // Crear opción para el select
+                    const option = document.createElement('option');
+                    option.value = timeString;
+                    option.textContent = timeString;
+                    
+                    timeSelect.appendChild(option);
+                }
+            });
+        }
+        
         function isTimeAvailable(date, time) {
             // Verificar si ya existe una cita a la misma hora
             return !appointments.some(app => app.date === date && app.time === time);
@@ -1140,7 +1290,7 @@
             
             if (filteredAppointments.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td colspan="6" style="text-align: center;">No hay citas agendadas</td>`;
+                row.innerHTML = `<td colspan="7" style="text-align: center;">No hay citas agendadas</td>`;
                 tbody.appendChild(row);
                 return;
             }
@@ -1167,7 +1317,7 @@
                 const headerRow = document.createElement('tr');
                 headerRow.className = 'date-header';
                 headerRow.innerHTML = `
-                    <td colspan="6">${formatDate(date)}</td>
+                    <td colspan="7">${formatDate(date)}</td>
                 `;
                 tbody.appendChild(headerRow);
                 
@@ -1179,8 +1329,9 @@
                         <td>${app.rut}</td>
                         <td>${app.name}</td>
                         <td>${formatDate(app.date)}</td>
-                        <td>${app.time} ${app.overbooking ? '<span style="color: var(--overbooking)">(Sobrecupo)</span>' : ''}</td>
+                        <td>${app.time}</td>
                         <td class="${app.paid ? 'paid' : 'not-paid'}">${app.paid ? 'Pagado' : 'No Pagado'}</td>
+                        <td>${app.overbooking ? 'Sí' : 'No'}</td>
                         <td>
                             <button class="btn-warning toggle-paid" data-id="${app.id}">
                                 <i class="fas fa-exchange-alt"></i> Cambiar Pago
@@ -1327,9 +1478,21 @@
             
             // Filtrar citas por fecha si se especifica
             let pdfAppointments = appointments;
+            let titleText = 'Todas las citas';
+            
             if (specificDate) {
                 pdfAppointments = appointments.filter(app => app.date === specificDate);
+                titleText = `Citas del ${formatDate(specificDate)}`;
                 doc.text(`Fecha: ${formatDate(specificDate)}`, 105, 29, { align: 'center' });
+            }
+            
+            doc.text(titleText, 105, specificDate ? 36 : 29, { align: 'center' });
+            
+            if (pdfAppointments.length === 0) {
+                doc.setFontSize(14);
+                doc.text('No hay citas para mostrar', 105, 50, { align: 'center' });
+                doc.save(specificDate ? `citas_${specificDate}.pdf` : 'citas_medicas.pdf');
+                return;
             }
             
             // Datos de la tabla
@@ -1346,7 +1509,7 @@
             doc.autoTable({
                 head: [['RUT', 'Nombre', 'Fecha', 'Hora', 'Estado Pago', 'Sobrecupo']],
                 body: tableData,
-                startY: specificDate ? 36 : 30,
+                startY: specificDate ? 43 : 36,
                 styles: { fontSize: 10 },
                 headStyles: { fillColor: [44, 127, 190] },
                 alternateRowStyles: { fillColor: [240, 240, 240] },
